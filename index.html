@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Game Week Scoreboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EAEEF5; --card:#FFFFFF; --ink:#1B2A4A; --muted:#5E6B85; --line:#D3DAE6;
+  --red:#D64545; --yellow:#E8B32E; --green:#3A9D6A; --blue:#3B6FD9;
+  --neg:#C23B3B; --pos:#2E8A5B;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#121A2B; --card:#1C263B; --ink:#E8EDF7; --muted:#9AA6BF; --line:#2E3A55;
+    --neg:#F07070; --pos:#5CC98E;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#121A2B; --card:#1C263B; --ink:#E8EDF7; --muted:#9AA6BF; --line:#2E3A55;
+  --neg:#F07070; --pos:#5CC98E;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:16px; line-height:1.45;
+}
+.wrap{max-width:720px;margin:0 auto;padding:20px 16px 48px}
+header h1{
+  font-size:clamp(2rem,8vw,3.2rem); font-weight:800; line-height:.95;
+  letter-spacing:-.02em; margin:8px 0 6px;
+}
+header p{margin:0;color:var(--muted)}
+.dots{display:flex;gap:6px;margin-bottom:10px}
+.dots span{width:14px;height:14px;border-radius:50%}
+nav{
+  position:sticky; top:env(safe-area-inset-top,0px); z-index:5;
+  background:var(--paper); margin:20px -16px 16px; padding:8px 16px;
+  display:flex; gap:6px; overflow-x:auto;
+}
+nav button{
+  flex:1 0 auto; font:inherit; font-weight:600; font-size:.95rem;
+  border:2px solid var(--ink); background:transparent; color:var(--ink);
+  padding:8px 14px; border-radius:999px; cursor:pointer;
+}
+nav button[aria-selected="true"]{background:var(--ink);color:var(--paper)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+section[hidden]{display:none}
+h2{font-size:1.4rem;margin:0 0 12px;font-weight:800}
+.note{
+  background:var(--card); border-left:4px solid var(--yellow);
+  padding:10px 12px; border-radius:6px; margin:0 0 16px; font-size:.92rem;
+}
+.note.err{border-left-color:var(--red)}
+
+/* Scoreboard track */
+.board{display:flex;flex-direction:column;gap:10px}
+.row{
+  background:var(--card); border-radius:14px; padding:12px 14px;
+  display:grid; grid-template-columns:auto 1fr auto; gap:4px 12px; align-items:center;
+}
+.rank{font-weight:800;font-size:1.5rem;width:1.6em;text-align:center;color:var(--muted)}
+.row.first .rank{color:var(--yellow)}
+.who{display:flex;align-items:center;gap:8px;min-width:0}
+.who b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.avatar{font-size:1.4rem;line-height:1}
+.total{font-weight:800;font-size:1.6rem;text-align:right;font-variant-numeric:tabular-nums}
+.total.neg{color:var(--neg)}
+.track{
+  grid-column:2 / 4; position:relative; height:14px; margin-top:4px;
+  background:repeating-linear-gradient(90deg,var(--line) 0 calc(10% - 2px),transparent calc(10% - 2px) 10%);
+  border-radius:4px;
+}
+.track .zero{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--muted)}
+.track .token{
+  position:absolute; top:50%; width:20px; height:20px; margin-left:-10px;
+  border-radius:50%; transform:translateY(-50%);
+  border:3px solid var(--card); box-shadow:0 0 0 2px var(--ink);
+  transition:left .5s ease;
+}
+.meta{grid-column:2 / 4;font-size:.85rem;color:var(--muted)}
+
+/* Forms */
+label.lbl{display:block;font-weight:600;margin:14px 0 6px}
+input[type=text]{
+  width:100%; font:inherit; padding:10px 12px; border-radius:10px;
+  border:2px solid var(--line); background:var(--card); color:var(--ink);
+}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{
+  font:inherit; border:2px solid var(--line); background:var(--card); color:var(--ink);
+  padding:6px 12px; border-radius:999px; cursor:pointer; display:flex; gap:6px; align-items:center;
+}
+.chip[aria-pressed="true"]{border-color:var(--ink);opacity:.35}
+.chip.emoji{font-size:1.3rem;padding:4px 10px}
+.chip.emoji[aria-pressed="true"]{opacity:1;background:var(--ink)}
+.order{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px}
+.order li{
+  background:var(--card); border-radius:10px; padding:8px 10px;
+  display:flex; align-items:center; gap:10px;
+}
+.order .pos{font-weight:800;width:1.6em;text-align:center}
+.order .name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pts{font-weight:800;font-variant-numeric:tabular-nums;min-width:2.5em;text-align:right}
+.pts.pos-v{color:var(--pos)} .pts.neg-v{color:var(--neg)} .pts.zero-v{color:var(--muted)}
+.icon{
+  font:inherit; background:none; border:none; color:var(--muted); cursor:pointer;
+  width:32px; height:32px; border-radius:8px; font-size:1rem;
+}
+.icon:hover{background:var(--line);color:var(--ink)}
+.icon:disabled{opacity:.25;cursor:default;background:none}
+.primary{
+  font:inherit; font-weight:800; font-size:1.05rem; margin-top:18px; width:100%;
+  background:var(--green); color:#fff; border:none; padding:14px; border-radius:12px; cursor:pointer;
+}
+.primary:disabled{background:var(--line);color:var(--muted);cursor:default}
+.hint{color:var(--muted);font-size:.9rem;margin:6px 0 0}
+.empty{color:var(--muted);background:var(--card);padding:18px;border-radius:14px;text-align:center}
+
+/* History */
+.game{background:var(--card);border-radius:14px;padding:12px 14px;margin-bottom:10px}
+.game-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.game-head b{font-size:1.1rem}
+.game-head small{color:var(--muted);white-space:nowrap}
+.results{list-style:none;padding:0;margin:8px 0 0;display:flex;flex-direction:column;gap:2px}
+.results li{display:flex;gap:8px;align-items:center}
+.results .p{width:1.4em;color:var(--muted);font-weight:600}
+.results .n{flex:1}
+.game-foot{display:flex;justify-content:flex-end}
+.link{font:inherit;background:none;border:none;color:var(--neg);cursor:pointer;font-size:.85rem;padding:4px}
+
+.order li.tie-row{background:none;padding:0 0 0 42px}
+.tie{font:inherit;font-size:.82rem;background:none;border:1px dashed var(--line);color:var(--muted);border-radius:999px;padding:2px 10px;cursor:pointer}
+.tie.on{border-style:solid;border-color:var(--blue);color:var(--blue);font-weight:600}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{flex:1 1 0;font:inherit;font-weight:600;border:2px solid var(--line);background:var(--card);color:var(--ink);padding:9px 10px;border-radius:10px;cursor:pointer;min-width:0}
+.seg button[aria-checked="true"]{border-color:var(--ink);background:var(--ink);color:var(--paper)}
+.chip.ta{border-color:var(--red);box-shadow:inset 0 0 0 1px var(--red)}
+.chip.tb{border-color:var(--blue);box-shadow:inset 0 0 0 1px var(--blue)}
+.chip .badge{font-size:.72rem;font-weight:800;color:#fff;border-radius:999px;padding:0 6px}
+.teams{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.team{background:var(--card);border-radius:12px;padding:10px 12px;border-top:4px solid var(--red);min-width:0}
+.team#teamB{border-top-color:var(--blue)}
+.team h3{margin:0 0 6px;font-size:1rem;display:flex;justify-content:space-between;gap:6px}
+.team ul{list-style:none;margin:0;padding:0;font-size:.95rem}
+.team li{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.team .none{color:var(--muted);font-size:.9rem}
+.results .team-label{font-weight:700;font-size:.85rem;margin-top:6px;color:var(--muted)}
+.live{background:var(--card);border-radius:14px;padding:14px;border-top:4px solid var(--yellow)}
+.live h3{margin:0 0 2px;font-size:1.2rem}
+.live .sub{color:var(--muted);font-size:.9rem;margin:0 0 10px}
+.qrow{display:grid;grid-template-columns:auto 1fr auto auto auto;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.qrow .qname{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.qrow .qname small{display:block;font-weight:400;color:var(--muted)}
+.qscore{font-weight:800;font-size:1.5rem;min-width:2ch;text-align:center;font-variant-numeric:tabular-nums}
+.qbtn{font:inherit;font-weight:800;font-size:1.1rem;width:44px;height:44px;border-radius:12px;border:2px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer}
+.qbtn.plus{background:var(--green);border-color:var(--green);color:#fff}
+.qbtn:disabled{opacity:.4;cursor:default}
+.qactions{display:flex;gap:8px;margin-top:14px}
+.qactions .primary{margin-top:0;flex:2}
+.secondary{font:inherit;font-weight:600;flex:1;background:transparent;color:var(--neg);border:2px solid var(--line);border-radius:12px;padding:12px;cursor:pointer}
+.chip.sel{border-color:var(--green);box-shadow:inset 0 0 0 1px var(--green)}
+.banner{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;font:inherit;text-align:left;background:var(--card);border:none;border-left:4px solid var(--yellow);border-radius:10px;padding:12px 14px;margin-bottom:12px;color:var(--ink);cursor:pointer}
+.banner b{font-weight:800}
+.qs{color:var(--muted);font-size:.85rem;margin-left:4px}
+.modal{position:fixed;inset:0;z-index:20;background:rgba(10,15,30,.55);display:flex;align-items:center;justify-content:center;padding:20px}
+.modal[hidden]{display:none}
+.modal-box{background:var(--card);color:var(--ink);border-radius:16px;padding:18px;max-width:380px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.3)}
+.modal-box p{margin:0 0 4px;font-weight:600;font-size:1.05rem}
+.secondary.keep{color:var(--ink)}
+.toggle{display:flex;align-items:center;gap:10px;margin-top:16px;background:var(--card);padding:10px 12px;border-radius:10px;cursor:pointer}
+.toggle input{width:20px;height:20px;accent-color:var(--green)}
+.toggle small{display:block;color:var(--muted)}
+.editing{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--card);border-left:4px solid var(--blue);padding:10px 12px;border-radius:6px;margin-bottom:8px}
+.tag{font-size:.78rem;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 8px;margin-left:6px;white-space:nowrap}
+.game-foot .link.edit{color:var(--blue)}
+.rules{font-size:.9rem;color:var(--muted);margin-top:28px}
+.rules table{border-collapse:collapse;margin-top:6px}
+.rules td,.rules th{padding:3px 10px 3px 0;text-align:left}
+.toast{
+  position:fixed; left:50%; bottom:calc(20px + env(safe-area-inset-bottom,0px));
+  transform:translateX(-50%); background:var(--ink); color:var(--paper);
+  padding:10px 18px; border-radius:999px; font-weight:600; opacity:0; transition:opacity .2s; pointer-events:none;
+}
+.toast.show{opacity:1}
+@media (prefers-reduced-motion:reduce){.track .token{transition:none}}
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+// ▼▼▼ PASTE YOUR FIREBASE CONFIG HERE (Firebase console → Project settings → Your apps → Web app) ▼▼▼
+window.FIREBASE_CONFIG = {
+  apiKey: "",
+  authDomain: "",
+  projectId: "",
+  storageBucket: "",
+  messagingSenderId: "",
+  appId: ""
+};
+// ▲▲▲
+</script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="dots" aria-hidden="true"><span style="background:var(--red)"></span><span style="background:var(--yellow)"></span><span style="background:var(--green)"></span><span style="background:var(--blue)"></span></div>
+    <h1>Game Week Scoreboard</h1>
+    <p>Every game counts. Everyone sees the same board.</p>
+  </header>
+
+  <nav role="tablist">
+    <button role="tab" data-tab="board" aria-selected="true">Scoreboard</button>
+    <button role="tab" data-tab="log" aria-selected="false">Log a game</button>
+    <button role="tab" data-tab="history" aria-selected="false">History</button>
+    <button role="tab" data-tab="players" aria-selected="false">Players</button>
+  </nav>
+
+  <div id="status"></div>
+
+  <section id="tab-board">
+    <div id="importBox"></div>
+    <div id="liveBanner"></div>
+    <div id="board" class="board"></div>
+    <div class="rules">
+      <b>Scoring</b>
+      <table>
+        <tr><th>Players</th><th>1st</th><th>2nd</th><th>3rd</th><th>Last</th><th>Others</th></tr>
+        <tr><td>2</td><td>+1</td><td>—</td><td>—</td><td>−1</td><td>—</td></tr>
+        <tr><td>3</td><td>+2</td><td>0</td><td>—</td><td>−1</td><td>—</td></tr>
+        <tr><td>4</td><td>+4</td><td>+2</td><td>0</td><td>−2</td><td>—</td></tr>
+        <tr><td>5+</td><td>+5</td><td>+3</td><td>+1</td><td>−2</td><td>0</td></tr>
+      </table>
+      <p style="margin:6px 0 0">Players with the same score share a place and all get that place's points. Players tied for last all lose the last-place points.</p>
+      <p style="margin:6px 0 0">Team vs team: every player on the winning team gets +1, every player on the losing team −1. A draw scores 0 for all.</p>
+      <p style="margin:6px 0 0">Quiz: players collect quiz points during the game. When it ends, they're ranked by quiz points and scored like a normal game.</p>
+      <p style="margin:6px 0 0">Winner-only games: the winner gets the 1st-place points above, everyone else gets 0.</p>
+    </div>
+  </section>
+
+  <section id="tab-log" hidden>
+    <h2 id="logTitle">Log a game</h2>
+    <div id="editBanner"></div>
+    <label class="lbl" for="gameName">Game</label>
+    <input type="text" id="gameName" list="gameNames" placeholder="Catan, Codenames, Azul…" autocomplete="off">
+    <datalist id="gameNames"></datalist>
+
+    <label class="lbl">Mode</label>
+    <div class="seg" role="radiogroup" aria-label="Game mode">
+      <button type="button" role="radio" data-mode="rank">Ranking</button>
+      <button type="button" role="radio" data-mode="teams">Team vs team</button>
+      <button type="button" role="radio" data-mode="quiz">Quiz</button>
+    </div>
+
+    <div id="rankPanel">
+    <label class="lbl">Tap players in finishing order, winner first</label>
+    <div id="pickChips" class="chips"></div>
+
+    <label class="toggle" for="winnerOnly">
+      <input type="checkbox" id="winnerOnly">
+      <span><b>Winner-only scoring</b><small>Only the winner scores. Nobody else gains or loses points.</small></span>
+    </label>
+
+    <label class="lbl">Result</label>
+    <ol id="order" class="order"></ol>
+    <p id="orderHint" class="hint"></p>
+    </div>
+
+    <div id="teamPanel" hidden>
+      <label class="lbl">Tap a player once for Team A, twice for Team B, again to take them out</label>
+      <div id="teamChips" class="chips"></div>
+      <div class="teams">
+        <div class="team" id="teamA"></div>
+        <div class="team" id="teamB"></div>
+      </div>
+      <label class="lbl">Result</label>
+      <div id="teamResult" class="seg"></div>
+      <p id="teamHint" class="hint"></p>
+    </div>
+
+    <div id="quizPanel" hidden></div>
+
+    <button class="primary" id="saveGame" disabled>Save game</button>
+  </section>
+
+  <section id="tab-history" hidden>
+    <h2>History</h2>
+    <div id="history"></div>
+  </section>
+
+  <section id="tab-players" hidden>
+    <h2>Players</h2>
+    <label class="lbl" for="playerName">Name</label>
+    <input type="text" id="playerName" placeholder="Who's playing?" maxlength="30" autocomplete="off">
+    <label class="lbl">Avatar</label>
+    <div id="emojiChips" class="chips"></div>
+    <label class="lbl">Colour</label>
+    <div id="colorChips" class="chips"></div>
+    <button class="primary" id="addPlayer" disabled>Add player</button>
+    <h2 style="margin-top:28px">Roster</h2>
+    <div id="roster"></div>
+  </section>
+</div>
+<div class="modal" id="modal" hidden>
+  <div class="modal-box" role="alertdialog" aria-modal="true" aria-labelledby="modalMsg">
+    <p id="modalMsg"></p>
+    <div class="qactions">
+      <button type="button" class="secondary keep" id="modalNo">Keep going</button>
+      <button type="button" class="primary" id="modalYes">Yes</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script id="seed" type="application/json">{"players": [{"color": "#3B6FD9", "createdAt": 1790608480095, "emoji": "🐼", "name": "Ludo", "id": "2662ma40nu5l3ebha02t"}, {"color": "#E8B32E", "createdAt": 1790608493473, "emoji": "🐝", "name": "Frans", "id": "0k3qslkzsfs2v0swyazi"}, {"color": "#E07A2F", "createdAt": 1790608518295, "emoji": "🦊", "name": "Pierre-Yves", "id": "78i5iawv40bylxzajz1w"}, {"color": "#E8B32E", "createdAt": 1790608525541, "emoji": "🐯", "name": "Loic", "id": "g0omdmouhog4bbvr0jzp"}, {"color": "#3D3D3D", "createdAt": 1790608571814, "emoji": "🐺", "name": "Died", "id": "qo8baz66p1t3wqbur8yo"}, {"color": "#3A9D6A", "createdAt": 1790608589393, "emoji": "🐢", "name": "Antoine", "id": "dl36707xsaufv8rxyvfb"}, {"color": "#D6508E", "createdAt": 1790608595997, "emoji": "🦄", "name": "Geoff", "id": "hofld08n7nzg9mi7iyun"}, {"color": "#6B7A8F", "createdAt": 1790608608679, "emoji": "🐨", "name": "Seb", "id": "iscvhiou2ozwp1zgpa0c"}], "games": [{"createdAt": 1790608692967, "name": "Hot streaks", "points": [5, 3, 0, 0, 0, 0, -2], "ranking": ["dl36707xsaufv8rxyvfb", "2662ma40nu5l3ebha02t", "qo8baz66p1t3wqbur8yo", "78i5iawv40bylxzajz1w", "g0omdmouhog4bbvr0jzp", "hofld08n7nzg9mi7iyun", "iscvhiou2ozwp1zgpa0c"], "id": "p2bxy9o6o6mblbb2e38y"}, {"createdAt": 1790608740963, "name": "Flip 7", "points": [5, 3, 0, 0, 0, 0, 0, -2], "ranking": ["dl36707xsaufv8rxyvfb", "qo8baz66p1t3wqbur8yo", "hofld08n7nzg9mi7iyun", "2662ma40nu5l3ebha02t", "0k3qslkzsfs2v0swyazi", "78i5iawv40bylxzajz1w", "iscvhiou2ozwp1zgpa0c", "g0omdmouhog4bbvr0jzp"], "id": "5a4ilyev7tr2s38sik6t"}, {"createdAt": 1790608877191, "editedAt": 1790610172696, "name": "Challengers", "points": [5, 3, 0, 0, 0, 0, 0, -2], "ranking": ["hofld08n7nzg9mi7iyun", "qo8baz66p1t3wqbur8yo", "g0omdmouhog4bbvr0jzp", "dl36707xsaufv8rxyvfb", "iscvhiou2ozwp1zgpa0c", "78i5iawv40bylxzajz1w", "2662ma40nu5l3ebha02t", "0k3qslkzsfs2v0swyazi"], "ties": [false, false, false, false, false, false, false, false], "winnerOnly": false, "id": "kc8kihy7g1pj5bzvvvws"}, {"createdAt": 1790609018193, "name": "Las Vegas", "points": [5, 3, 0, 0, -2], "ranking": ["78i5iawv40bylxzajz1w", "0k3qslkzsfs2v0swyazi", "g0omdmouhog4bbvr0jzp", "dl36707xsaufv8rxyvfb", "qo8baz66p1t3wqbur8yo"], "id": "ujysyle14c8sth7w2ltp"}, {"createdAt": 1790609099782, "name": "Mascarade", "points": [5, 3, 0, 0, 0, 0, 0, -2], "ranking": ["dl36707xsaufv8rxyvfb", "2662ma40nu5l3ebha02t", "0k3qslkzsfs2v0swyazi", "qo8baz66p1t3wqbur8yo", "78i5iawv40bylxzajz1w", "g0omdmouhog4bbvr0jzp", "hofld08n7nzg9mi7iyun", "iscvhiou2ozwp1zgpa0c"], "id": "zp1lgf23m2b8saumzm0t"}, {"createdAt": 1790609152437, "editedAt": 1790609794921, "name": "Mascarde", "points": [5, 5, 0, 0, 0, 0, 0, -2], "ranking": ["hofld08n7nzg9mi7iyun", "qo8baz66p1t3wqbur8yo", "iscvhiou2ozwp1zgpa0c", "dl36707xsaufv8rxyvfb", "78i5iawv40bylxzajz1w", "0k3qslkzsfs2v0swyazi", "2662ma40nu5l3ebha02t", "g0omdmouhog4bbvr0jzp"], "ties": [false, true, false, false, false, false, false, false], "winnerOnly": false, "id": "e13kk0oknk5ijgpghd19"}, {"createdAt": 1790609167773, "name": "Orapa mine", "points": [1, -1], "ranking": ["g0omdmouhog4bbvr0jzp", "hofld08n7nzg9mi7iyun"], "id": "q6xz7vnmjahfak4th17f"}, {"createdAt": 1790609176858, "name": "Orapa mine", "points": [1, -1], "ranking": ["g0omdmouhog4bbvr0jzp", "0k3qslkzsfs2v0swyazi"], "id": "dkwmzzeq5u18yvvhb36p"}, {"createdAt": 1790609256553, "name": "High society", "points": [5, 3, 0, 0, -2], "ranking": ["iscvhiou2ozwp1zgpa0c", "0k3qslkzsfs2v0swyazi", "hofld08n7nzg9mi7iyun", "78i5iawv40bylxzajz1w", "2662ma40nu5l3ebha02t"], "id": "iwkftzb33wj35gwfk0f8"}, {"createdAt": 1790609281476, "name": "Moon Colony", "points": [4, 2, 0, -2], "ranking": ["iscvhiou2ozwp1zgpa0c", "qo8baz66p1t3wqbur8yo", "0k3qslkzsfs2v0swyazi", "hofld08n7nzg9mi7iyun"], "id": "fs4kskdzapa67ty71d0g"}, {"createdAt": 1790609309219, "name": "Moon colony", "points": [4, 2, 0, -2], "ranking": ["qo8baz66p1t3wqbur8yo", "0k3qslkzsfs2v0swyazi", "hofld08n7nzg9mi7iyun", "iscvhiou2ozwp1zgpa0c"], "id": "jsmiun292lne1gews6li"}, {"createdAt": 1790609499605, "name": "Game of thrones", "points": [5, 0, 0, 0, 0], "ranking": ["dl36707xsaufv8rxyvfb", "0k3qslkzsfs2v0swyazi", "78i5iawv40bylxzajz1w", "2662ma40nu5l3ebha02t", "qo8baz66p1t3wqbur8yo"], "winnerOnly": true, "id": "3tceso40w4uu0vki0dgy"}, {"createdAt": 1790612036752, "name": "Moon Colony", "points": [5, 3, 0, 0, 0], "ranking": ["g0omdmouhog4bbvr0jzp", "78i5iawv40bylxzajz1w", "qo8baz66p1t3wqbur8yo", "2662ma40nu5l3ebha02t", "dl36707xsaufv8rxyvfb"], "ties": [false, false, false, false, true], "winnerOnly": false, "id": "i4aggro8bk3dt3ctw52h"}, {"createdAt": 1790613243298, "name": "Love letter", "points": [3, 0, -1], "ranking": ["hofld08n7nzg9mi7iyun", "iscvhiou2ozwp1zgpa0c", "0k3qslkzsfs2v0swyazi"], "ties": [false, false, false], "winnerOnly": false, "id": "mzpr0d8n805iioc6kyxo"}, {"createdAt": 1790617437406, "mode": "teams", "name": "Petanque", "points": [1, 1, 1, -1, -1, -1], "ranking": ["2662ma40nu5l3ebha02t", "dl36707xsaufv8rxyvfb", "hofld08n7nzg9mi7iyun", "0k3qslkzsfs2v0swyazi", "78i5iawv40bylxzajz1w", "g0omdmouhog4bbvr0jzp"], "teamWinner": "A", "teams": {"A": ["2662ma40nu5l3ebha02t", "dl36707xsaufv8rxyvfb", "hofld08n7nzg9mi7iyun"], "B": ["0k3qslkzsfs2v0swyazi", "78i5iawv40bylxzajz1w", "g0omdmouhog4bbvr0jzp"]}, "id": "8v9io6wzaper52g6ltjl"}]}</script>
+<script>
+(function(){
+  const EMOJIS = ["🦊","🐻","🐼","🐸","🦉","🐙","🦁","🐯","🐨","🐧","🐢","🦄","🐝","🐺","🐲","🦖"];
+  const COLORS = ["#D64545","#E8B32E","#3A9D6A","#3B6FD9","#8E5BD6","#E07A2F","#2BA7B5","#D6508E","#6B7A8F","#3D3D3D"];
+
+  const state = { players: [], games: [], order: [], emoji: EMOJIS[0], color: COLORS[3], readOnly: false, winnerOnly: false, editingId: null, ties: [], mode: "rank", teamOf: {}, teamWinner: null, quizPick: [], live: null, livePoints: [], busy: false };
+  let db = null;
+  // Local fallback when the shared store isn't available (e.g. a preview)
+  const local = { players: [], games: [], quiz: null, quizPoints: [] };
+
+  const $ = s => document.querySelector(s);
+  const el = (tag, attrs = {}, ...kids) => {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) {
+      if (v == null) continue;
+      if (k === "class") n.className = v;
+      else if (k === "text") n.textContent = v;
+      else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+      else n.setAttribute(k, v);
+    }
+    for (const k of kids) if (k != null) n.append(k);
+    return n;
+  };
+
+  // ---------- Scoring ----------
+  function pointsFor(n, winnerOnly) {
+    if (n < 2) return [];
+    const top = n === 2 ? 1 : n === 3 ? 2 : Math.min(n, 5);
+    const pts = new Array(n).fill(0);
+    if (winnerOnly) { pts[0] = top; return pts; }
+    if (n === 2) return [1, -1];
+    if (n === 3) return [2, 0, -1];
+    pts[0] = top;
+    pts[1] = top - 2;
+    if (n >= 5) pts[2] = 1;
+    pts[n - 1] = -2;
+    return pts;
+  }
+  // ties[i] === true means player i shares the place of player i-1.
+  function placesFor(n, ties) {
+    const places = [];
+    for (let i = 0; i < n; i++) places.push(i > 0 && ties && ties[i] ? places[i - 1] : i + 1);
+    return places;
+  }
+  // Tied players get the points of the best place in their group,
+  // except players tied for last, who all take the last-place points.
+  // If everyone ties, nobody scores.
+  function scoreGame(n, winnerOnly, ties) {
+    const base = pointsFor(n, winnerOnly);
+    const places = placesFor(n, ties);
+    const lastPlace = places[n - 1];
+    if (n > 1 && lastPlace === 1) return places.map(() => 0);
+    return places.map(pl => (pl === lastPlace ? base[n - 1] : base[pl - 1]) ?? 0);
+  }
+  // One shape for every game: ids, points, place labels and who won.
+  function gameResult(g) {
+    if (g.mode === "teams") {
+      const A = (g.teams && g.teams.A) || [], B = (g.teams && g.teams.B) || [];
+      const w = g.teamWinner;
+      const ids = [...A, ...B];
+      const team = ids.map((_, i) => (i < A.length ? "A" : "B"));
+      const pts = team.map(t => (w === "draw" || !w ? 0 : t === w ? 1 : -1));
+      return { ids, pts, team, wins: team.map(t => t === w) };
+    }
+    const ids = g.ranking || [];
+    const places = placesFor(ids.length, g.ties);
+    return { ids, pts: scoreGame(ids.length, !!g.winnerOnly, g.ties), places, wins: places.map(p => p === 1) };
+  }
+  const fmt = v => (v > 0 ? "+" + v : v < 0 ? "−" + Math.abs(v) : "0");
+  const cls = v => (v > 0 ? "pos-v" : v < 0 ? "neg-v" : "zero-v");
+
+  // ---------- Tabs ----------
+  document.querySelectorAll("nav button").forEach(b => b.addEventListener("click", () => {
+    document.querySelectorAll("nav button").forEach(x => x.setAttribute("aria-selected", x === b));
+    document.querySelectorAll("section[id^=tab-]").forEach(s => s.hidden = s.id !== "tab-" + b.dataset.tab);
+  }));
+
+  // In-page confirm: browser confirm() dialogs are blocked on published pages.
+  function askConfirm(msg, yesLabel) {
+    return new Promise(resolve => {
+      const m = $("#modal"), yes = $("#modalYes"), no = $("#modalNo");
+      $("#modalMsg").textContent = msg;
+      yes.textContent = yesLabel || "Yes";
+      m.hidden = false; yes.focus();
+      const done = v => { m.hidden = true; yes.onclick = no.onclick = m.onclick = null; document.removeEventListener("keydown", key); resolve(v); };
+      const key = e => { if (e.key === "Escape") done(false); };
+      yes.onclick = () => done(true);
+      no.onclick = () => done(false);
+      m.onclick = e => { if (e.target === m) done(false); };
+      document.addEventListener("keydown", key);
+    });
+  }
+
+  function toast(msg) {
+    const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+    clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("show"), 1800);
+  }
+  function setStatus(msg, isErr) {
+    const s = $("#status"); s.replaceChildren();
+    if (msg) s.append(el("p", { class: "note" + (isErr ? " err" : ""), text: msg }));
+  }
+
+  const playerById = id => state.players.find(p => p.id === id);
+
+  // ---------- Render: scoreboard ----------
+  function renderBoard() {
+    const box = $("#board"); box.replaceChildren();
+    if (!state.players.length) {
+      box.append(el("div", { class: "empty", text: "Add players in the Players tab to start the board." }));
+      return;
+    }
+    const stats = {};
+    state.players.forEach(p => stats[p.id] = { total: 0, played: 0, wins: 0 });
+    state.games.forEach(g => {
+      const r = gameResult(g);
+      r.ids.forEach((id, i) => {
+        if (!stats[id]) return;
+        stats[id].total += r.pts[i] || 0;
+        stats[id].played++;
+        if (r.wins[i]) stats[id].wins++;
+      });
+    });
+    const rows = state.players.map(p => ({ p, ...stats[p.id] }))
+      .sort((a, b) => b.total - a.total || b.wins - a.wins || a.p.name.localeCompare(b.p.name));
+    const totals = rows.map(r => r.total);
+    const lo = Math.min(0, ...totals), hi = Math.max(0, ...totals);
+    const span = hi - lo || 1;
+    const pct = v => 4 + ((v - lo) / span) * 92;
+
+    let prevTotal = null, prevRank = 0;
+    rows.forEach((r, i) => {
+      const rank = r.total === prevTotal ? prevRank : i + 1;
+      prevTotal = r.total; prevRank = rank;
+      const track = el("div", { class: "track", "aria-hidden": "true" },
+        el("div", { class: "zero", style: `left:${pct(0)}%` }),
+        el("div", { class: "token", style: `left:${pct(r.total)}%;background:${r.p.color}` }));
+      box.append(el("div", { class: "row" + (rank === 1 && r.played ? " first" : "") },
+        el("div", { class: "rank", text: rank }),
+        el("div", { class: "who" }, el("span", { class: "avatar", text: r.p.emoji }), el("b", { text: r.p.name })),
+        el("div", { class: "total" + (r.total < 0 ? " neg" : ""), text: r.total < 0 ? "−" + Math.abs(r.total) : r.total }),
+        track,
+        el("div", { class: "meta", text: `${r.played} game${r.played === 1 ? "" : "s"}, ${r.wins} win${r.wins === 1 ? "" : "s"}` })
+      ));
+    });
+  }
+
+  // ---------- Render: log game ----------
+  function renderLog() {
+    document.querySelectorAll(".seg [data-mode]").forEach(b => b.setAttribute("aria-checked", b.dataset.mode === state.mode));
+    $("#rankPanel").hidden = state.mode !== "rank";
+    $("#teamPanel").hidden = state.mode !== "teams";
+    $("#quizPanel").hidden = state.mode !== "quiz";
+    $("#saveGame").hidden = state.mode === "quiz";
+    renderTeams();
+    renderQuiz();
+    const chips = $("#pickChips"); chips.replaceChildren();
+    if (!state.players.length) chips.append(el("p", { class: "hint", text: "No players yet. Add them in the Players tab." }));
+    state.players.forEach(p => {
+      const picked = state.order.includes(p.id);
+      chips.append(el("button", {
+        class: "chip", "aria-pressed": picked, type: "button",
+        onclick: () => { if (!picked) { state.order.push(p.id); state.ties.push(false); renderLog(); } }
+      }, el("span", { text: p.emoji }), p.name));
+    });
+
+    const ol = $("#order"); ol.replaceChildren();
+    const pts = scoreGame(state.order.length, state.winnerOnly, state.ties);
+    const places = placesFor(state.order.length, state.ties);
+    state.order.forEach((id, i) => {
+      const p = playerById(id); if (!p) return;
+      const v = pts[i] ?? 0;
+      const tiedHere = (i > 0 && state.ties[i]) || !!state.ties[i + 1];
+      if (i > 0) ol.append(el("li", { class: "tie-row" },
+        el("button", { class: "tie" + (state.ties[i] ? " on" : ""), type: "button", "aria-pressed": !!state.ties[i],
+          onclick: () => { state.ties[i] = !state.ties[i]; renderLog(); } },
+          state.ties[i] ? "= Same score (tap to split)" : "Same score as above?")));
+      ol.append(el("li", {},
+        el("span", { class: "pos", text: places[i] + (tiedHere ? "=" : "") }),
+        el("span", { text: p.emoji }),
+        el("span", { class: "name", text: p.name }),
+        el("span", { class: "pts " + (state.order.length > 1 ? cls(v) : "zero-v"), text: state.order.length > 1 ? fmt(v) : "…" }),
+        el("button", { class: "icon", type: "button", "aria-label": "Move up", disabled: i === 0 ? "" : null, onclick: () => move(i, -1) }, "↑"),
+        el("button", { class: "icon", type: "button", "aria-label": "Move down", onclick: () => move(i, 1) }, "↓"),
+        el("button", { class: "icon", type: "button", "aria-label": "Remove", onclick: () => { state.order.splice(i, 1); state.ties.splice(i, 1); state.ties[0] = false; renderLog(); } }, "✕")
+      ));
+      if (i === 0) ol.lastChild.querySelector('[aria-label="Move up"]').disabled = true;
+      if (i === state.order.length - 1) ol.lastChild.querySelector('[aria-label="Move down"]').disabled = true;
+    });
+    $("#winnerOnly").checked = state.winnerOnly;
+    const editing = state.editingId && state.games.find(g => g.id === state.editingId);
+    $("#logTitle").textContent = editing ? "Edit game" : "Log a game";
+    $("#saveGame").textContent = editing ? "Save changes" : "Save game";
+    $("#editBanner").replaceChildren(editing ? el("div", { class: "editing" },
+      el("span", { text: "Editing " + editing.name + " from " + new Date(editing.createdAt).toLocaleString([], { weekday: "short", hour: "2-digit", minute: "2-digit" }) }),
+      el("button", { class: "link edit", type: "button", onclick: cancelEdit }, "Cancel")) : "");
+    const n = state.order.length;
+    $("#orderHint").textContent = n === 0 ? "Nobody picked yet." : n === 1 ? "Pick at least one more player." : `${n}-player game.`;
+    const okRank = n >= 2;
+    const tA = teamIds("A"), tB = teamIds("B");
+    const okTeams = tA.length > 0 && tB.length > 0 && !!state.teamWinner;
+    $("#saveGame").disabled = state.readOnly || !$("#gameName").value.trim() || !(state.mode === "teams" ? okTeams : okRank);
+
+    const names = [...new Set(state.games.map(g => g.name))].sort();
+    $("#gameNames").replaceChildren(...names.map(n => el("option", { value: n })));
+  }
+  const teamIds = t => state.players.filter(p => state.teamOf[p.id] === t).map(p => p.id);
+  function renderTeams() {
+    const chips = $("#teamChips"); chips.replaceChildren();
+    if (!state.players.length) chips.append(el("p", { class: "hint", text: "No players yet. Add them in the Players tab." }));
+    state.players.forEach(p => {
+      const t = state.teamOf[p.id];
+      chips.append(el("button", {
+        class: "chip" + (t === "A" ? " ta" : t === "B" ? " tb" : ""), type: "button",
+        "aria-label": p.name + (t ? ", Team " + t : ", not playing"),
+        onclick: () => {
+          const next = !t ? "A" : t === "A" ? "B" : null;
+          if (next) state.teamOf[p.id] = next; else delete state.teamOf[p.id];
+          renderLog();
+        }
+      }, el("span", { text: p.emoji }), p.name,
+        t ? el("span", { class: "badge", style: `background:var(${t === "A" ? "--red" : "--blue"})`, text: t }) : null));
+    });
+    const w = state.teamWinner;
+    ["A", "B"].forEach(t => {
+      const ids = teamIds(t);
+      const v = !w ? null : w === "draw" ? 0 : w === t ? 1 : -1;
+      const ul = el("ul");
+      ids.forEach(id => { const p = playerById(id); ul.append(el("li", { text: p.emoji + " " + p.name })); });
+      $("#team" + t).replaceChildren(
+        el("h3", {}, el("span", { text: "Team " + t + (w === t ? " 🏆" : "") }),
+          v === null ? null : el("span", { class: "pts " + cls(v), text: fmt(v) + " each" })),
+        ids.length ? ul : el("p", { class: "none", text: "Nobody yet" }));
+    });
+    const opts = [["A", "Team A wins"], ["B", "Team B wins"], ["draw", "Draw"]];
+    $("#teamResult").replaceChildren(...opts.map(([k, label]) => el("button", {
+      type: "button", role: "radio", "aria-checked": w === k,
+      onclick: () => { state.teamWinner = k; renderLog(); }
+    }, label)));
+    const a = teamIds("A").length, b = teamIds("B").length;
+    $("#teamHint").textContent = !a || !b ? "Each team needs at least one player." : !w ? "Pick the result." : `${a} vs ${b}.`;
+  }
+  document.querySelectorAll(".seg [data-mode]").forEach(b => b.addEventListener("click", () => { state.mode = b.dataset.mode; renderLog(); }));
+
+  // ---------- Quiz ----------
+  function quizScores() {
+    const sc = {};
+    ((state.live && state.live.players) || []).forEach(id => sc[id] = 0);
+    state.livePoints.forEach(pt => { if (pt.player in sc) sc[pt.player] += pt.delta || 0; });
+    return sc;
+  }
+  function quizRanking(players, sc) {
+    const ranking = players.slice().sort((a, b) => sc[b] - sc[a]);
+    const ties = ranking.map((id, i) => i > 0 && sc[id] === sc[ranking[i - 1]]);
+    return { ranking, ties };
+  }
+  function renderQuiz() {
+    const box = $("#quizPanel"); box.replaceChildren();
+    const lq = state.live;
+    if (!lq) {
+      box.append(el("label", { class: "lbl", text: "Who's playing?" }));
+      const chips = el("div", { class: "chips" });
+      if (!state.players.length) chips.append(el("p", { class: "hint", text: "No players yet. Add them in the Players tab." }));
+      state.players.forEach(p => {
+        const on = state.quizPick.includes(p.id);
+        chips.append(el("button", { class: "chip" + (on ? " sel" : ""), type: "button", "aria-pressed": on,
+          onclick: () => { state.quizPick = on ? state.quizPick.filter(x => x !== p.id) : [...state.quizPick, p.id]; renderLog(); } },
+          el("span", { text: p.emoji }), p.name, on ? " ✓" : null));
+      });
+      box.append(chips);
+      const name = $("#gameName").value.trim();
+      const n = state.quizPick.length;
+      box.append(el("p", { class: "hint", text: !name ? "Give the quiz a name above." : n < 2 ? "Pick at least two players." : `${n} players. Everyone with this link can follow the scores live.` }));
+      const start = el("button", { class: "primary", type: "button", onclick: startQuiz }, "Start quiz");
+      start.disabled = state.readOnly || state.busy || !name || n < 2 || !!state.editingId;
+      box.append(start);
+      if (state.editingId) box.append(el("p", { class: "hint", text: "Finish or cancel the edit before starting a quiz." }));
+      return;
+    }
+    const sc = quizScores();
+    const players = (lq.players || []).filter(id => playerById(id));
+    const { ranking, ties } = quizRanking(players, sc);
+    const anyPoints = state.livePoints.length > 0;
+    const pts = scoreGame(ranking.length, false, ties);
+    const proj = {}; ranking.forEach((id, i) => proj[id] = pts[i]);
+    const live = el("div", { class: "live" },
+      el("h3", { text: "🎤 " + lq.name }),
+      el("p", { class: "sub", text: "Live now. Tap + when someone gets a point." }));
+    ranking.forEach(id => {
+      const p = playerById(id);
+      const minus = el("button", { class: "qbtn", type: "button", "aria-label": "Take a point from " + p.name, onclick: () => addQuizPoint(id, -1) }, "−");
+      const plus = el("button", { class: "qbtn plus", type: "button", "aria-label": "Give " + p.name + " a point", onclick: () => addQuizPoint(id, 1) }, "+");
+      minus.disabled = plus.disabled = state.readOnly;
+      live.append(el("div", { class: "qrow" },
+        el("span", { class: "avatar", text: p.emoji }),
+        el("span", { class: "qname" }, p.name, el("small", { text: anyPoints ? "Board points if it ended now: " + fmt(proj[id]) : "No points yet" })),
+        minus,
+        el("span", { class: "qscore", text: sc[id] }),
+        plus));
+    });
+    const finish = el("button", { class: "primary", type: "button", onclick: finishQuiz }, "Finish & save");
+    const cancel = el("button", { class: "secondary", type: "button", onclick: cancelQuiz }, "Cancel quiz");
+    finish.disabled = cancel.disabled = state.readOnly || state.busy;
+    live.append(el("div", { class: "qactions" }, cancel, finish));
+    box.append(live);
+  }
+  function renderLiveBanner() {
+    const b = $("#liveBanner"); b.replaceChildren();
+    if (!state.live) return;
+    const sc = quizScores();
+    const lead = Object.entries(sc).filter(([id]) => playerById(id)).sort((a, b) => b[1] - a[1])[0];
+    b.append(el("button", { class: "banner", type: "button", onclick: () => {
+        state.mode = "quiz"; renderLog(); document.querySelector('nav button[data-tab="log"]').click(); } },
+      el("span", {}, el("b", { text: "🎤 Quiz live: " + state.live.name }),
+        el("br"), el("small", { text: lead && lead[1] > 0 ? playerById(lead[0]).name + " leads with " + lead[1] : "Just started" })),
+      el("span", { text: "Follow →" })));
+  }
+
+  async function startQuiz() {
+    const name = $("#gameName").value.trim();
+    if (!name || state.quizPick.length < 2 || state.live) return;
+    const data = { name, players: state.quizPick.slice(), status: "live", startedAt: Date.now() };
+    state.busy = true; renderLog();
+    try {
+      if (db) await db.collection("quizzes").add(data);
+      else { local.quiz = { id: "q" + Date.now(), ...data }; local.quizPoints = []; applyLocal(); }
+      state.quizPick = []; $("#gameName").value = "";
+      toast("Quiz started");
+    } catch (e) { handleWriteError(e); }
+    state.busy = false; renderLog();
+  }
+  // Each tap is its own record, so taps from two phones never overwrite each other.
+  async function addQuizPoint(player, delta) {
+    const lq = state.live; if (!lq) return;
+    if (delta < 0 && (quizScores()[player] || 0) <= 0) return;
+    const pt = { player, delta, at: Date.now() };
+    try {
+      if (db) await db.collection("quizzes/" + lq.id + "/points").add(pt);
+      else { local.quizPoints.push({ id: "pt" + Date.now() + Math.random(), ...pt }); applyLocal(); }
+    } catch (e) { handleWriteError(e); }
+  }
+  async function finishQuiz() {
+    const lq = state.live; if (!lq) return;
+    const sc = quizScores();
+    const players = (lq.players || []).filter(id => playerById(id));
+    if (players.length < 2) { toast("A quiz needs at least two players"); return; }
+    if (!await askConfirm("End the quiz and add it to the scoreboard?")) return;
+    const { ranking, ties } = quizRanking(players, sc);
+    const quizPts = {}; players.forEach(id => quizPts[id] = sc[id]);
+    const game = { name: lq.name, mode: "quiz", ranking, ties, winnerOnly: false, quizScores: quizPts, createdAt: Date.now() };
+    game.points = gameResult(game).pts;
+    state.busy = true; renderLog();
+    try {
+      if (db) {
+        await db.collection("games").add(game);
+        await db.doc("quizzes/" + lq.id).update({ status: "done", endedAt: Date.now() });
+      } else {
+        local.games.unshift({ id: "g" + Date.now(), ...game }); local.quiz = null; local.quizPoints = []; applyLocal();
+      }
+      toast(lq.name + " saved");
+      state.mode = "rank";
+      document.querySelector('nav button[data-tab="board"]').click();
+    } catch (e) { handleWriteError(e); }
+    state.busy = false; renderLog();
+  }
+  async function cancelQuiz() {
+    const lq = state.live; if (!lq) return;
+    if (!await askConfirm("Cancel this quiz? Its points won't be saved.")) return;
+    try {
+      if (db) await db.doc("quizzes/" + lq.id).update({ status: "cancelled", endedAt: Date.now() });
+      else { local.quiz = null; local.quizPoints = []; applyLocal(); }
+      toast("Quiz cancelled");
+    } catch (e) { handleWriteError(e); }
+  }
+
+  function move(i, d) {
+    const j = i + d; if (j < 0 || j >= state.order.length) return;
+    [state.order[i], state.order[j]] = [state.order[j], state.order[i]];
+    renderLog();
+  }
+  $("#gameName").addEventListener("input", renderLog);
+  $("#winnerOnly").addEventListener("change", e => { state.winnerOnly = e.target.checked; renderLog(); });
+
+  function resetForm() {
+    state.order = []; state.ties = []; state.winnerOnly = false; state.editingId = null; state.mode = "rank"; state.teamOf = {}; state.teamWinner = null;
+    $("#gameName").value = "";
+  }
+  function cancelEdit() { resetForm(); renderLog(); document.querySelector('nav button[data-tab="history"]').click(); }
+  function startEdit(g) {
+    resetForm();
+    state.editingId = g.id;
+    if (g.mode === "teams") {
+      state.mode = "teams";
+      ((g.teams && g.teams.A) || []).forEach(id => state.teamOf[id] = "A");
+      ((g.teams && g.teams.B) || []).forEach(id => state.teamOf[id] = "B");
+      state.teamWinner = g.teamWinner || null;
+    } else {
+      state.mode = "rank";
+      state.order = (g.ranking || []).slice();
+      state.ties = state.order.map((_, i) => !!(g.ties && g.ties[i]));
+      state.winnerOnly = !!g.winnerOnly;
+    }
+    $("#gameName").value = g.name;
+    renderLog();
+    document.querySelector('nav button[data-tab="log"]').click();
+    window.scrollTo(0, 0);
+  }
+
+  // ---------- Render: history ----------
+  function renderHistory() {
+    const box = $("#history"); box.replaceChildren();
+    if (!state.games.length) { box.append(el("div", { class: "empty", text: "No games logged yet. The first result will show up here." })); return; }
+    state.games.forEach(g => {
+      const when = g.createdAt ? new Date(g.createdAt) : null;
+      const list = el("ol", { class: "results" });
+      const r = gameResult(g);
+      r.ids.forEach((id, i) => {
+        const p = playerById(id);
+        const v = r.pts[i] || 0;
+        let label;
+        if (r.team) {
+          if (i === 0 || r.team[i] !== r.team[i - 1]) {
+            const t = r.team[i];
+            list.append(el("li", { class: "team-label", text: "Team " + t + (g.teamWinner === t ? " 🏆" : g.teamWinner === "draw" ? " (draw)" : "") }));
+          }
+          label = "";
+        } else {
+          const tied = r.places.filter(x => x === r.places[i]).length > 1;
+          label = r.places[i] + (tied ? "=" : "");
+        }
+        list.append(el("li", {},
+          el("span", { class: "p", text: label }),
+          el("span", { text: p ? p.emoji : "❔" }),
+          el("span", { class: "n" }, p ? p.name : "Removed player",
+            g.mode === "quiz" && g.quizScores && id in g.quizScores ? el("span", { class: "qs", text: "(" + g.quizScores[id] + " quiz pts)" }) : null),
+          el("span", { class: "pts " + cls(v), text: fmt(v) })));
+      });
+      box.append(el("div", { class: "game" },
+        el("div", { class: "game-head" },
+          el("b", {}, g.name, g.mode === "teams" ? el("span", { class: "tag", text: "Teams" }) : g.mode === "quiz" ? el("span", { class: "tag", text: "Quiz" }) : null, g.mode !== "teams" && g.winnerOnly ? el("span", { class: "tag", text: "Winner only" }) : null, g.editedAt ? el("span", { class: "tag", text: "Edited" }) : null),
+          el("small", { text: when ? when.toLocaleString([], { weekday: "short", hour: "2-digit", minute: "2-digit" }) : "" })),
+        list,
+        state.readOnly ? null : el("div", { class: "game-foot" },
+          el("button", { class: "link edit", type: "button", onclick: () => startEdit(g) }, "Edit"),
+          el("button", { class: "link", type: "button", onclick: () => deleteGame(g) }, "Delete game"))
+      ));
+    });
+  }
+
+  // ---------- Render: players ----------
+  function renderPlayersForm() {
+    $("#emojiChips").replaceChildren(...EMOJIS.map(e => el("button", {
+      class: "chip emoji", type: "button", "aria-pressed": e === state.emoji, "aria-label": "Avatar " + e,
+      onclick: () => { state.emoji = e; renderPlayersForm(); }
+    }, e)));
+    $("#colorChips").replaceChildren(...COLORS.map(c => el("button", {
+      class: "chip", type: "button", "aria-pressed": "false", "aria-label": "Colour " + c,
+      style: `width:36px;height:36px;padding:0;background:${c};border-color:${c === state.color ? "var(--ink)" : "transparent"};border-width:3px`,
+      onclick: () => { state.color = c; renderPlayersForm(); }
+    })));
+    $("#addPlayer").disabled = state.readOnly || !$("#playerName").value.trim();
+  }
+  $("#playerName").addEventListener("input", renderPlayersForm);
+  $("#playerName").addEventListener("keydown", e => { if (e.key === "Enter" && !$("#addPlayer").disabled) addPlayer(); });
+
+  function renderRoster() {
+    const box = $("#roster"); box.replaceChildren();
+    if (!state.players.length) { box.append(el("div", { class: "empty", text: "Nobody on the roster yet." })); return; }
+    const ul = el("ul", { class: "order" });
+    state.players.forEach(p => {
+      const played = state.games.some(g => (g.ranking || []).includes(p.id));
+      ul.append(el("li", {},
+        el("span", { style: `width:12px;height:12px;border-radius:50%;background:${p.color}` }),
+        el("span", { text: p.emoji }),
+        el("span", { class: "name", text: p.name }),
+        state.readOnly || played ? null :
+          el("button", { class: "icon", type: "button", "aria-label": "Remove " + p.name, onclick: () => removePlayer(p) }, "✕")
+      ));
+    });
+    box.append(ul);
+    box.append(el("p", { class: "hint", text: "Players who've been in a game can't be removed." }));
+  }
+
+  function renderAll() { renderImport(); renderLiveBanner(); renderBoard(); renderLog(); renderHistory(); renderPlayersForm(); renderRoster(); }
+
+  // ---------- Writes ----------
+  function handleWriteError(e) {
+    if (e && (e.code === "invalid_argument" || e.code === "permission-denied")) {
+      state.readOnly = true;
+      setStatus("You can view this board but not change it. Check the Firestore rules.", true);
+      renderAll();
+    } else if (e && e.code === "quota_exceeded") {
+      toast("Storage is full");
+    } else {
+      toast("Couldn't save. Try again.");
+    }
+  }
+
+  async function addPlayer() {
+    const name = $("#playerName").value.trim(); if (!name) return;
+    if (state.players.some(p => p.name.toLowerCase() === name.toLowerCase())) { toast(name + " is already on the roster"); return; }
+    const data = { name, emoji: state.emoji, color: state.color, createdAt: Date.now() };
+    $("#addPlayer").disabled = true;
+    try {
+      if (db) await db.collection("players").add(data);
+      else { local.players.push({ id: "p" + Date.now(), ...data }); applyLocal(); }
+      $("#playerName").value = "";
+      toast(name + " added");
+    } catch (e) { handleWriteError(e); }
+    renderPlayersForm();
+  }
+  $("#addPlayer").addEventListener("click", addPlayer);
+
+  async function removePlayer(p) {
+    if (!await askConfirm(`Remove ${p.name} from the roster?`)) return;
+    try {
+      if (db) await db.doc("players/" + p.id).delete();
+      else { local.players = local.players.filter(x => x.id !== p.id); applyLocal(); }
+      toast(p.name + " removed");
+    } catch (e) { handleWriteError(e); }
+  }
+
+  async function saveGame() {
+    const name = $("#gameName").value.trim();
+    const editing = state.editingId && state.games.find(g => g.id === state.editingId);
+    let data;
+    if (state.mode === "teams") {
+      const A = teamIds("A"), B = teamIds("B");
+      if (!name || !A.length || !B.length || !state.teamWinner) return;
+      data = { name, mode: "teams", teams: { A, B }, teamWinner: state.teamWinner, ranking: [...A, ...B] };
+    } else {
+      const ranking = state.order.slice();
+      if (!name || ranking.length < 2) return;
+      const ties = ranking.map((_, i) => i > 0 && !!state.ties[i]);
+      data = { name, mode: "rank", ranking, winnerOnly: state.winnerOnly, ties };
+      if (editing && editing.mode === "quiz" && editing.quizScores) {
+        data.mode = "quiz";
+        data.quizScores = {};
+        ranking.forEach(id => { if (id in editing.quizScores) data.quizScores[id] = editing.quizScores[id]; });
+      }
+    }
+    data.points = gameResult(data).pts;
+    data.createdAt = editing ? editing.createdAt : Date.now();
+    if (editing) data.editedAt = Date.now();
+    $("#saveGame").disabled = true;
+    try {
+      if (db) {
+        if (editing) await db.doc("games/" + editing.id).set(data);
+        else await db.collection("games").add(data);
+      } else {
+        if (editing) local.games = local.games.map(g => g.id === editing.id ? { id: g.id, ...data } : g);
+        else local.games.unshift({ id: "g" + Date.now(), ...data });
+        applyLocal();
+      }
+      resetForm();
+      toast(name + (editing ? " updated" : " saved"));
+      document.querySelector('nav button[data-tab="board"]').click();
+    } catch (e) { handleWriteError(e); }
+    renderLog();
+  }
+  $("#saveGame").addEventListener("click", saveGame);
+
+  async function deleteGame(g) {
+    if (!await askConfirm(`Delete this ${g.name} game? Its points will be removed from everyone's total.`)) return;
+    try {
+      if (db) await db.doc("games/" + g.id).delete();
+      else { local.games = local.games.filter(x => x.id !== g.id); applyLocal(); }
+      if (state.editingId === g.id) resetForm();
+      toast("Game deleted");
+    } catch (e) { handleWriteError(e); }
+  }
+
+  function applyLocal() {
+    state.players = local.players.slice();
+    state.games = local.games.slice();
+    state.live = local.quiz; state.livePoints = local.quizPoints.slice();
+    { const keep = state.order.map(id => !!playerById(id)); state.order = state.order.filter((_, i) => keep[i]); state.ties = state.ties.filter((_, i) => keep[i]); if (state.ties.length) state.ties[0] = false; }
+    renderAll();
+  }
+
+  // ---------- Boot ----------
+  renderAll();
+  setStatus("Connecting to the shared board…");
+
+  function showSetup(msg) {
+    state.readOnly = true;
+    setStatus(msg, true);
+    renderAll();
+  }
+
+  // Keep a listener alive: if it drops, open a fresh one.
+  function keepAlive(start, label) {
+    let unsub = null, tries = 0;
+    const open = () => {
+      unsub = start(e => {
+        console.warn(label + " listener stopped", e);
+        if (e && e.code === "permission-denied") { setStatus("The database refused access. Check the Firestore rules.", true); return; }
+        const wait = Math.min(30000, 1500 * 2 ** tries++);
+        setTimeout(open, wait);
+      }, () => { tries = 0; });
+    };
+    open();
+    return () => unsub && unsub();
+  }
+
+  // One-time import of the scores recorded before the move.
+  async function importSeed() {
+    const seed = JSON.parse(document.getElementById("seed").textContent);
+    if (!await askConfirm(`Import ${seed.players.length} players and ${seed.games.length} games from the earlier scoreboard?`, "Import")) return;
+    try {
+      const batch = db.batch();
+      seed.players.forEach(({ id, ...d }) => batch.set(db.doc("players/" + id), d));
+      seed.games.forEach(({ id, ...d }) => batch.set(db.doc("games/" + id), d));
+      await batch.commit();
+      toast("Scores imported");
+    } catch (e) { console.error(e); toast("Import failed"); }
+  }
+  function renderImport() {
+    const box = $("#importBox"); if (!box) return;
+    box.replaceChildren();
+    if (db && state.loaded && !state.players.length && !state.games.length)
+      box.append(el("div", { class: "note" },
+        el("p", { style: "margin:0 0 8px", text: "This board is empty. Bring over the scores from the earlier version?" }),
+        el("button", { class: "primary", type: "button", style: "margin-top:0", onclick: importSeed }, "Import earlier scores")));
+  }
+
+  (async () => {
+    const cfg = window.FIREBASE_CONFIG || {};
+    if (!window.firebase || !cfg.projectId || !cfg.apiKey) {
+      showSetup("Setup needed: paste your Firebase config at the top of this file.");
+      return;
+    }
+    try {
+      firebase.initializeApp(cfg);
+      db = firebase.firestore();
+    } catch (e) { console.error(e); showSetup("Couldn't connect to Firebase. Check the config at the top of this file."); return; }
+    setStatus("");
+    keepAlive((onErr, ok) => db.collection("players").orderBy("createdAt", "asc").onSnapshot(snap => {
+      ok();
+      state.players = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      { const keep = state.order.map(id => !!playerById(id)); state.order = state.order.filter((_, i) => keep[i]); state.ties = state.ties.filter((_, i) => keep[i]); if (state.ties.length) state.ties[0] = false; }
+      Object.keys(state.teamOf).forEach(id => { if (!playerById(id)) delete state.teamOf[id]; });
+      renderAll();
+    }, onErr), "players");
+    keepAlive((onErr, ok) => db.collection("games").orderBy("createdAt", "desc").onSnapshot(snap => {
+      ok();
+      state.games = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      state.loaded = true;
+      renderAll();
+    }, onErr), "games");
+    let pointsStop = null, pointsQuiz = null;
+    keepAlive((onErr, ok) => db.collection("quizzes").where("status", "==", "live").onSnapshot(snap => {
+      ok();
+      const live = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => b.startedAt - a.startedAt)[0] || null;
+      state.live = live;
+      const id = live ? live.id : null;
+      if (id !== pointsQuiz) {
+        if (pointsStop) pointsStop();
+        pointsStop = null; pointsQuiz = id; state.livePoints = [];
+        if (id) pointsStop = keepAlive((onErr2, ok2) => db.collection("quizzes/" + id + "/points").onSnapshot(ps => {
+          ok2();
+          state.livePoints = ps.docs.map(d => ({ id: d.id, ...d.data() }));
+          renderAll();
+        }, onErr2), "quiz points");
+      }
+      renderAll();
+    }, onErr), "quizzes");
+  })();
+})();
+</script>
+</body>
+</html>
