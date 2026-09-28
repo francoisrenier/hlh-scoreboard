@@ -1,0 +1,412 @@
+{
+  "exportedAt": "2026-09-28T19:58:12.943761+02:00",
+  "source": "https://claude.ai/artifact/9Ex1zjocBLcJayhQGdxtyt",
+  "players": [
+    {
+      "color": "#3B6FD9",
+      "createdAt": 1790608480095,
+      "emoji": "🐼",
+      "name": "Ludo",
+      "id": "2662ma40nu5l3ebha02t"
+    },
+    {
+      "color": "#E8B32E",
+      "createdAt": 1790608493473,
+      "emoji": "🐝",
+      "name": "Frans",
+      "id": "0k3qslkzsfs2v0swyazi"
+    },
+    {
+      "color": "#E07A2F",
+      "createdAt": 1790608518295,
+      "emoji": "🦊",
+      "name": "Pierre-Yves",
+      "id": "78i5iawv40bylxzajz1w"
+    },
+    {
+      "color": "#E8B32E",
+      "createdAt": 1790608525541,
+      "emoji": "🐯",
+      "name": "Loic",
+      "id": "g0omdmouhog4bbvr0jzp"
+    },
+    {
+      "color": "#3D3D3D",
+      "createdAt": 1790608571814,
+      "emoji": "🐺",
+      "name": "Died",
+      "id": "qo8baz66p1t3wqbur8yo"
+    },
+    {
+      "color": "#3A9D6A",
+      "createdAt": 1790608589393,
+      "emoji": "🐢",
+      "name": "Antoine",
+      "id": "dl36707xsaufv8rxyvfb"
+    },
+    {
+      "color": "#D6508E",
+      "createdAt": 1790608595997,
+      "emoji": "🦄",
+      "name": "Geoff",
+      "id": "hofld08n7nzg9mi7iyun"
+    },
+    {
+      "color": "#6B7A8F",
+      "createdAt": 1790608608679,
+      "emoji": "🐨",
+      "name": "Seb",
+      "id": "iscvhiou2ozwp1zgpa0c"
+    }
+  ],
+  "games": [
+    {
+      "createdAt": 1790608692967,
+      "name": "Hot streaks",
+      "points": [
+        5,
+        3,
+        0,
+        0,
+        0,
+        0,
+        -2
+      ],
+      "ranking": [
+        "dl36707xsaufv8rxyvfb",
+        "2662ma40nu5l3ebha02t",
+        "qo8baz66p1t3wqbur8yo",
+        "78i5iawv40bylxzajz1w",
+        "g0omdmouhog4bbvr0jzp",
+        "hofld08n7nzg9mi7iyun",
+        "iscvhiou2ozwp1zgpa0c"
+      ],
+      "id": "p2bxy9o6o6mblbb2e38y"
+    },
+    {
+      "createdAt": 1790608740963,
+      "name": "Flip 7",
+      "points": [
+        5,
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        -2
+      ],
+      "ranking": [
+        "dl36707xsaufv8rxyvfb",
+        "qo8baz66p1t3wqbur8yo",
+        "hofld08n7nzg9mi7iyun",
+        "2662ma40nu5l3ebha02t",
+        "0k3qslkzsfs2v0swyazi",
+        "78i5iawv40bylxzajz1w",
+        "iscvhiou2ozwp1zgpa0c",
+        "g0omdmouhog4bbvr0jzp"
+      ],
+      "id": "5a4ilyev7tr2s38sik6t"
+    },
+    {
+      "createdAt": 1790608877191,
+      "editedAt": 1790610172696,
+      "name": "Challengers",
+      "points": [
+        5,
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        -2
+      ],
+      "ranking": [
+        "hofld08n7nzg9mi7iyun",
+        "qo8baz66p1t3wqbur8yo",
+        "g0omdmouhog4bbvr0jzp",
+        "dl36707xsaufv8rxyvfb",
+        "iscvhiou2ozwp1zgpa0c",
+        "78i5iawv40bylxzajz1w",
+        "2662ma40nu5l3ebha02t",
+        "0k3qslkzsfs2v0swyazi"
+      ],
+      "ties": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "winnerOnly": false,
+      "id": "kc8kihy7g1pj5bzvvvws"
+    },
+    {
+      "createdAt": 1790609018193,
+      "name": "Las Vegas",
+      "points": [
+        5,
+        3,
+        0,
+        0,
+        -2
+      ],
+      "ranking": [
+        "78i5iawv40bylxzajz1w",
+        "0k3qslkzsfs2v0swyazi",
+        "g0omdmouhog4bbvr0jzp",
+        "dl36707xsaufv8rxyvfb",
+        "qo8baz66p1t3wqbur8yo"
+      ],
+      "id": "ujysyle14c8sth7w2ltp"
+    },
+    {
+      "createdAt": 1790609099782,
+      "name": "Mascarade",
+      "points": [
+        5,
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        -2
+      ],
+      "ranking": [
+        "dl36707xsaufv8rxyvfb",
+        "2662ma40nu5l3ebha02t",
+        "0k3qslkzsfs2v0swyazi",
+        "qo8baz66p1t3wqbur8yo",
+        "78i5iawv40bylxzajz1w",
+        "g0omdmouhog4bbvr0jzp",
+        "hofld08n7nzg9mi7iyun",
+        "iscvhiou2ozwp1zgpa0c"
+      ],
+      "id": "zp1lgf23m2b8saumzm0t"
+    },
+    {
+      "createdAt": 1790609152437,
+      "editedAt": 1790609794921,
+      "name": "Mascarde",
+      "points": [
+        5,
+        5,
+        0,
+        0,
+        0,
+        0,
+        0,
+        -2
+      ],
+      "ranking": [
+        "hofld08n7nzg9mi7iyun",
+        "qo8baz66p1t3wqbur8yo",
+        "iscvhiou2ozwp1zgpa0c",
+        "dl36707xsaufv8rxyvfb",
+        "78i5iawv40bylxzajz1w",
+        "0k3qslkzsfs2v0swyazi",
+        "2662ma40nu5l3ebha02t",
+        "g0omdmouhog4bbvr0jzp"
+      ],
+      "ties": [
+        false,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "winnerOnly": false,
+      "id": "e13kk0oknk5ijgpghd19"
+    },
+    {
+      "createdAt": 1790609167773,
+      "name": "Orapa mine",
+      "points": [
+        1,
+        -1
+      ],
+      "ranking": [
+        "g0omdmouhog4bbvr0jzp",
+        "hofld08n7nzg9mi7iyun"
+      ],
+      "id": "q6xz7vnmjahfak4th17f"
+    },
+    {
+      "createdAt": 1790609176858,
+      "name": "Orapa mine",
+      "points": [
+        1,
+        -1
+      ],
+      "ranking": [
+        "g0omdmouhog4bbvr0jzp",
+        "0k3qslkzsfs2v0swyazi"
+      ],
+      "id": "dkwmzzeq5u18yvvhb36p"
+    },
+    {
+      "createdAt": 1790609256553,
+      "name": "High society",
+      "points": [
+        5,
+        3,
+        0,
+        0,
+        -2
+      ],
+      "ranking": [
+        "iscvhiou2ozwp1zgpa0c",
+        "0k3qslkzsfs2v0swyazi",
+        "hofld08n7nzg9mi7iyun",
+        "78i5iawv40bylxzajz1w",
+        "2662ma40nu5l3ebha02t"
+      ],
+      "id": "iwkftzb33wj35gwfk0f8"
+    },
+    {
+      "createdAt": 1790609281476,
+      "name": "Moon Colony",
+      "points": [
+        4,
+        2,
+        0,
+        -2
+      ],
+      "ranking": [
+        "iscvhiou2ozwp1zgpa0c",
+        "qo8baz66p1t3wqbur8yo",
+        "0k3qslkzsfs2v0swyazi",
+        "hofld08n7nzg9mi7iyun"
+      ],
+      "id": "fs4kskdzapa67ty71d0g"
+    },
+    {
+      "createdAt": 1790609309219,
+      "name": "Moon colony",
+      "points": [
+        4,
+        2,
+        0,
+        -2
+      ],
+      "ranking": [
+        "qo8baz66p1t3wqbur8yo",
+        "0k3qslkzsfs2v0swyazi",
+        "hofld08n7nzg9mi7iyun",
+        "iscvhiou2ozwp1zgpa0c"
+      ],
+      "id": "jsmiun292lne1gews6li"
+    },
+    {
+      "createdAt": 1790609499605,
+      "name": "Game of thrones",
+      "points": [
+        5,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ranking": [
+        "dl36707xsaufv8rxyvfb",
+        "0k3qslkzsfs2v0swyazi",
+        "78i5iawv40bylxzajz1w",
+        "2662ma40nu5l3ebha02t",
+        "qo8baz66p1t3wqbur8yo"
+      ],
+      "winnerOnly": true,
+      "id": "3tceso40w4uu0vki0dgy"
+    },
+    {
+      "createdAt": 1790612036752,
+      "name": "Moon Colony",
+      "points": [
+        5,
+        3,
+        0,
+        0,
+        0
+      ],
+      "ranking": [
+        "g0omdmouhog4bbvr0jzp",
+        "78i5iawv40bylxzajz1w",
+        "qo8baz66p1t3wqbur8yo",
+        "2662ma40nu5l3ebha02t",
+        "dl36707xsaufv8rxyvfb"
+      ],
+      "ties": [
+        false,
+        false,
+        false,
+        false,
+        true
+      ],
+      "winnerOnly": false,
+      "id": "i4aggro8bk3dt3ctw52h"
+    },
+    {
+      "createdAt": 1790613243298,
+      "name": "Love letter",
+      "points": [
+        3,
+        0,
+        -1
+      ],
+      "ranking": [
+        "hofld08n7nzg9mi7iyun",
+        "iscvhiou2ozwp1zgpa0c",
+        "0k3qslkzsfs2v0swyazi"
+      ],
+      "ties": [
+        false,
+        false,
+        false
+      ],
+      "winnerOnly": false,
+      "id": "mzpr0d8n805iioc6kyxo"
+    },
+    {
+      "createdAt": 1790617437406,
+      "mode": "teams",
+      "name": "Petanque",
+      "points": [
+        1,
+        1,
+        1,
+        -1,
+        -1,
+        -1
+      ],
+      "ranking": [
+        "2662ma40nu5l3ebha02t",
+        "dl36707xsaufv8rxyvfb",
+        "hofld08n7nzg9mi7iyun",
+        "0k3qslkzsfs2v0swyazi",
+        "78i5iawv40bylxzajz1w",
+        "g0omdmouhog4bbvr0jzp"
+      ],
+      "teamWinner": "A",
+      "teams": {
+        "A": [
+          "2662ma40nu5l3ebha02t",
+          "dl36707xsaufv8rxyvfb",
+          "hofld08n7nzg9mi7iyun"
+        ],
+        "B": [
+          "0k3qslkzsfs2v0swyazi",
+          "78i5iawv40bylxzajz1w",
+          "g0omdmouhog4bbvr0jzp"
+        ]
+      },
+      "id": "8v9io6wzaper52g6ltjl"
+    }
+  ]
+}
